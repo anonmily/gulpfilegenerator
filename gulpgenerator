@@ -71,14 +71,13 @@ if not exists( packagejson ):
 #------ For each declaration in config file, get the appropriate dependencies ---#
 DEPENDENCIES = setup['all']['dependencies']
 for tool in config:
-	print tool
 	if is_dependency(tool):
 		tool_dependencies = setup[tool]['dependencies']
 		for dependency in tool_dependencies:
 			if dependency not in DEPENDENCIES:
 				DEPENDENCIES.append(dependency)
 	else:
-		if tool == 'app':
+		if tool == 'app' or tool == 'scripts':
 			pass
 		else:
 			print 'Sorry, ' + tool + ' is not a valid option.'
@@ -101,7 +100,7 @@ for dependency in DEPENDENCIES:
 
 #------------------ Template setup ------------------#
 
-env = Environment(loader=PackageLoader('gulpfile','templates'))
+env = Environment(loader=PackageLoader('gulpfilegenerator','templates'))
 
 with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 
@@ -142,6 +141,7 @@ with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 
 	# Add the gulp task declaration
 	watch = []
+	print 'TASKS:'
 	for tool in config:
 		if to_be_declared(tool):
 			try:
@@ -177,7 +177,6 @@ with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 						with open(typescript_config, 'w+') as tsconfig:
 							with open( join(os.path.dirname( os.path.abspath(__file__)), 'templates','tsconfig.json'), 'r') as default_tsconfig:
 								entire_file = default_tsconfig.read()
-								print(entire_file)
 								tsconfig.write(entire_file)
 
 					watch.append({
@@ -186,8 +185,6 @@ with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 					})
 				elif tool == 'scripts':
 					variables['config'] = config
-					print('-- tool is scripts')
-					print variables
 				else:
 					if 'sources' in config[tool]:
 						watch.append({
@@ -195,7 +192,8 @@ with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 							'actions': [tool]
 						})
 					else:
-						print tool + ' has no sources'
+						#print tool + ' has no sources'
+						pass
 				template = env.get_template(tool + '.js')
 				gulpfile.write( template.render(**variables ) )
 				gulpfile.write(SECTION_DIVIDER)

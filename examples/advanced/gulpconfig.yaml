@@ -1,0 +1,76 @@
+---
+app:
+  name: 'AdvancedExample'
+  version: 0.0.0
+  scripts:
+    start: node ./backend/server
+
+# Server/Sync Stuff
+nodemon:
+  script: 'backend/server.js'
+  ignore:
+    - "gulp*"
+    - "node_modules/*/**"
+    - "node_modules/*/*/**"
+    - "*/node_modules/*/**"
+    - "*/node_modules/*/*/**"
+    - "*/bower_components/*/**"
+    - "*/bower_components/*/*/**"
+    - "*/public/*/**"
+browsersync:
+  proxy: "http://localhost:9000"
+  files:
+    - public*/**.*
+  browser: google chrome
+  port: 8000
+
+# Javascript
+eslint:
+  sources:
+    - src/js/**.js
+    - src/js/*/**.js
+js:
+  sources: 
+    - bower_components/jquery/dist/jquery.min.js
+  destination: 
+    directory: public/js
+    file: frontend.js
+typescript:
+  sources:
+    - "frontend/src/**"
+    - "frontend/src/*/**"
+    - "frontend/src/*/*/**"
+  destination:
+    directory: frontend/app
+react:
+  sources:
+    - frontend/app/Main.js
+  destination: 
+    directory: public/js
+    file: bundle.js
+  es6: true
+scripts:
+  destination:
+    directory: public/js
+    file: evoke.js
+
+# Styles
+less:
+  sources:
+    - frontend/#less/style.less
+  autoprefix:
+    browsers:
+      - last 2 versions
+    cascade: true
+  destination: 
+    directory: public/css
+    file: style.css
+css:
+  sources:
+    - public/css/bootstrap.css
+    - public/css/style.css
+  destination: 
+    directory: public/css
+    file: frontend.css
+  reload: true
+
