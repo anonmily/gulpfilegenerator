@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "allowJs": true,
+        "jsx": "preserve",
+        "target": "ES6",
+        "allowSyntheticDefaultImports": true
+    },
+    "compileOnSave": true
+}

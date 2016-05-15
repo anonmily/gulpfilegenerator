@@ -5,21 +5,26 @@ var beep = require("beeper");
 var domain = require("domain");
 var _ = require("lodash");
 var util = require("gulp-util");
+var plumber = require("gulp-plumber");
+var inject = require("gulp-inject");
+var sourcemaps = require("gulp-sourcemaps");
+var rename = require("gulp-rename");
+var typescript = require("gulp-typescript");
+var typings = require("typings");
 var less = require("gulp-less");
 var concat = require("gulp-concat");
 var uglify = require("gulp-uglify");
 var autoprefixer = require("gulp-autoprefixer");
 var browsersync = require("browser-sync");
 var reload = browsersync.reload;
-var plumber = require("gulp-plumber");
 var nodemon = require("gulp-nodemon");
 var mocha = require("gulp-mocha");
 var browserify = require("browserify");
 var babelify = require("babelify");
 var tap = require("gulp-tap");
-var rename = require("gulp-rename");
 var reactify = require("reactify");
 var mocha = require("mocha");
+var eslint = require("gulp-eslint");
 
 
 //--------------------
@@ -35,6 +40,48 @@ function handleError(name) {
         this.emit("end");
     }
 }
+
+//--------------------
+
+// uses the typings package to manage Typescript type declarations
+var ts_project = typescript.createProject('/Users/michelle/Projects/gulpfilegenerator/examples/advanced/tsconfig.json');
+gulp.task('typescript', function(cb) {
+    return gulp.src([
+        "frontend/src/**",
+        "frontend/src/*/**",
+        "frontend/src/*/*/**"
+    ])
+        .pipe(plumber())
+        .pipe( inject(gulp.src(['./typings/index.d.ts'], {read: true}), {
+            starttag: '//typings',
+            endtag: '//',
+            transform: function(filepath, file, i, length){
+                var filepath = __filename.split(path.sep)
+                filepath.pop()
+                filepath = filepath.join('/')
+                return '/// <reference path="' + filepath + '/typings/index.d.ts" />'
+            },
+            removeTags: true,
+
+        }))
+        .on('error', handleError('Typescript Gulp Inject Error'))
+        .pipe( sourcemaps.init() )
+        .pipe( typescript(ts_project) )
+        .pipe( sourcemaps.write('.') )
+        .pipe(rename( function(path){
+            if(path.extname == '.jsx'){
+                console.log(path)
+                path.extname = '.js'
+            }
+            if(path.extname == '.map'){
+                path.basename = path.basename.replace('.jsx','.js')
+            }
+            return path
+        }))
+        .on('error', handleError('Typescript Error'))
+        .pipe(plumber.stop())
+        .pipe(gulp.dest('frontend/app'))
+});
 
 //--------------------
 
@@ -147,6 +194,16 @@ gulp.task('react', ['reactify'], function(){
 
 //--------------------
 
+gulp.task("eslint",function(){
+    return gulp.src([
+    	"src/js/**.js",
+    	"src/js/*/**.js"
+    ]).pipe(eslint({config: ".eslintrc"}))
+        .pipe(eslint.format());
+});
+
+//--------------------
+
 
 gulp.task('scripts', ['js'], function() {
     return gulp.src(["frontend/app/Main.js","bower_components/jquery/dist/jquery.min.js"
@@ -179,6 +236,14 @@ gulp.task('css', function() {
 gulp.task('watch', function() {
 	
     gulp.watch( [
+    	"frontend/src/**",
+    	"frontend/src/*/**",
+    	"frontend/src/*/*/**",
+    	"typings/*/**",
+    	"typings/**"
+    ],["typescript"]);
+    
+    gulp.watch( [
     	"frontend/#less/style.less"
     ],["less"]);
     
@@ -188,7 +253,12 @@ gulp.task('watch', function() {
     
     gulp.watch( [
     	"frontend/app/Main.js"
-    ],["react","mocha"]);
+    ],["eslint","react","mocha"]);
+    
+    gulp.watch( [
+    	"src/js/**.js",
+    	"src/js/*/**.js"
+    ],["eslint"]);
     
     gulp.watch( [
     	"public/css/bootstrap.css",
@@ -199,4 +269,4 @@ gulp.task('watch', function() {
 
 //--------------------
 
-gulp.task("default",["less","browsersync","nodemon","js","react","scripts","css","watch"]);
+gulp.task("default",["typescript","less","browsersync","nodemon","js","react","eslint","scripts","css","watch"]);
