@@ -3,9 +3,9 @@ gulp.task('js', function() {
             {% for source in sources %}"{{ source }}"{% if not loop.last %},
         {% endif %}{%endfor%}
         ])
-        .pipe(concat('frontend.js'))
-        .on('error', gutil.log)
-        .pipe(gulp.dest( dest.dir.js ));
+        .pipe(concat('{{ destination.file }}'))
+        .on('error', util.log)
+        .pipe(gulp.dest('{{ destination.directory }}'));
 });
 
 gulp.task('reloadjs', function() {

@@ -1,0 +1,43 @@
+{
+  "ecmaFeatures": {
+    "jsx": true,
+    "modules": true
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "jquery": true,
+    "es6": true,
+    "jest": true,
+    "commonjs": true
+  },
+  "rules": {
+    "quotes": 0,
+    "no-trailing-spaces": 0,
+    "eol-last": 0,
+    "no-underscore-dangle": 0,
+    "no-alert": 0,
+    "no-lone-blocks": 0,
+    "no-console": 0,
+    "no-unused-vars": 0,
+    "no-use-before-define": 0,
+    "consistent-this": [1,"self"]
+  },
+  "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module",
+      "ecmaFeatures": {
+          "jsx": true,
+          "modules": true
+      }
+  },
+  "globals": {
+    jQuery: true,
+    $: true
+  },
+  {% if react %}
+  "plugins": [
+    "react"
+  ]
+  {% endif %}
+}

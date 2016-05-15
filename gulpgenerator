@@ -12,7 +12,7 @@ def is_dependency(tool):
 	return (tool in setup) and not (tool == 'app')
 
 def to_be_declared(task):
-	return ('babel-plugin' not in dependency) and ('babel-preset' not in dependency) and ('babel-core' not in dependency) and not (task == 'app')
+	return ('babel-plugin' not in task) and ('babel-preset' not in task) and ('babel-core' not in task) and not (task == 'app') and 'eslint-plugin' not in task
 
 def to_be_installed(tool):
 	global setup
@@ -32,8 +32,10 @@ def join(*args):
 #---- Variables ----#
 Environment = jinja2.Environment
 PackageLoader = jinja2.PackageLoader
-currdir = os.getcwd()
+env = Environment(loader=PackageLoader('gulpfilegenerator','templates'))
 
+
+currdir = os.getcwd()
 
 config_file_name = "gulpconfig.yaml"
 config_location = join(currdir, config_file_name)
@@ -43,8 +45,10 @@ typings_config = join(currdir,'typings.json')
 typescript_config = join(currdir, 'tsconfig.json')
 
 packagejson = join(currdir, 'package.json')
+eslintrc = join(currdir, '.eslintrc')
 
 SECTION_DIVIDER = '\n\n//--------------------\n\n'
+
 
 #---- Get dependencies config information ---#
 setup = []
@@ -67,6 +71,13 @@ if not exists( packagejson ):
 		app_info = config['app']
 		npmpackage.write(json.dumps(app_info))
 
+if not exists( eslintrc ) and 'eslint' in config:
+	with open(eslintrc, 'w+') as eslint_config:
+		if 'config' in config['eslint']:
+			eslint_settings = config['eslint']['config']
+		else:
+			has_react = 'react' in config
+			eslint_config.write( env.get_template('eslintrc').render(react=has_react) )
 
 #------ For each declaration in config file, get the appropriate dependencies ---#
 DEPENDENCIES = setup['all']['dependencies']
@@ -81,6 +92,9 @@ for tool in config:
 			pass
 		else:
 			print 'Sorry, ' + tool + ' is not a valid option.'
+
+if 'react' in config and 'eslint' in config:
+	DEPENDENCIES.append('eslint-plugin-react')
 
 #------------------ Install dependencies -------------#
 existing_dependencies = []
@@ -99,8 +113,6 @@ for dependency in DEPENDENCIES:
 		call(['npm','install','--save-dev',dependency])
 
 #------------------ Template setup ------------------#
-
-env = Environment(loader=PackageLoader('gulpfilegenerator','templates'))
 
 with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
 
