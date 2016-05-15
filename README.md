@@ -1,7 +1,7 @@
 # Gulpfile generator
 I love _using_ Gulp. Writing gulpfiles, though? Not so much. 
 
-This is a script written in Python that will take a YAML configuration file and generate a gulpfile for you. 
+So, this is a script written in Python that will take a YAML configuration file and generate a gulpfile for you. A 272 line gulpfile becomes a 77-line YAML file; no need to worry about too much implementation detail.
 
 To run it, it's best that you add the script (**gulpgenerator**) to your PATH. It will look in the current working directory for a **gulpconfig.yaml** file and then generate the gulpfile accordingly.
 
