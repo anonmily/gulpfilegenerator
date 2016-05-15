@@ -1,0 +1,69 @@
+---
+all:
+  dependencies:
+    - gulp
+    - node-notifier
+    - beeper
+    - domain
+    - lodash
+    - gulp-util
+eslint:
+  dependencies:
+    - gulp-eslint
+typescript:
+  dependencies:
+    - gulp-plumber
+    - gulp-inject
+    - gulp-sourcemaps
+    - gulp-rename
+    - gulp-typescript
+    - typings
+js:
+  dependencies:
+    - gulp-concat
+    - gulp-uglify
+    - browser-sync
+react:
+  dependencies:
+    - browserify
+    - babelify
+    - gulp-plumber
+    - gulp-tap
+    - gulp-rename
+    - gulp-concat
+    - babel-core
+    - babel-plugin-transform-class-properties
+    - babel-plugin-transform-decorators
+    - babel-preset-es2015
+    - babel-preset-jest
+    - babel-preset-react
+    - babelify
+    - reactify
+    - mocha
+sass:
+  dependencies:
+    - gulp-sass
+    - gulp-concat
+    - gulp-uglify
+    - gulp-autoprefixer
+    - browser-sync
+    - gulp-plumber
+less:
+  dependencies:
+    - gulp-less
+    - gulp-concat
+    - gulp-uglify
+    - gulp-autoprefixer
+    - browser-sync
+    - gulp-plumber
+css:
+  dependencies:
+    - gulp-concat
+    - browser-sync
+browsersync:
+  dependencies:
+    - browser-sync
+nodemon:
+  dependencies:
+    - gulp-nodemon
+    - gulp-mocha

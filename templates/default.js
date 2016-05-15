@@ -1,0 +1,1 @@
+gulp.task("default",[{% for task in tasks %}"{{ task }}"{% if not loop.last %},{% endif %}{%endfor%},"watch"]);

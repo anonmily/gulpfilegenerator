@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+
+import sys, os, re, csv, copy, yaml, pprint, json
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
+from subprocess import call
+import jinja2
+
+#---- Functions ----#
+def is_dependency(tool):
+	global setup
+	return (tool in setup) and not (tool == 'app')
+
+def to_be_declared(task):
+	return ('babel-plugin' not in dependency) and ('babel-preset' not in dependency) and ('babel-core' not in dependency) and not (task == 'app')
+
+def to_be_installed(tool):
+	global setup
+	return tool in setup and not (tool == 'app')
+
+def variable_declaration(var_name, package_name):
+	return 'var ' + var_name + ' = ' + package_name + ';\n'
+def dependency_declaration(var_name, package_name):
+	return variable_declaration(var_name, 'require("' + package_name + '")')
+
+def exists(file):
+	return os.path.isfile(file)
+
+def join(*args):
+	return os.path.normpath(os.path.join(*args))
+
+#---- Variables ----#
+Environment = jinja2.Environment
+PackageLoader = jinja2.PackageLoader
+currdir = os.getcwd()
+
+
+config_file_name = "gulpconfig.yaml"
+config_location = join(currdir, config_file_name)
+
+typings_directory = join(currdir,'typings')
+typings_config = join(currdir,'typings.json')
+typescript_config = join(currdir, 'tsconfig.json')
+
+packagejson = join(currdir, 'package.json')
+
+SECTION_DIVIDER = '\n\n//--------------------\n\n'
+
+#---- Get dependencies config information ---#
+setup = []
+with open(join(os.path.dirname(os.path.abspath(__file__)), 'setup.yaml'), 'r') as setup_config:
+	setup = yaml.load(setup_config)
+
+#---- Get the configuration file from current directory -----#
+
+print 'Looking for ' + config_location
+try:
+	with open(config_location, 'r') as config_file:
+		config = yaml.load(config_file)
+except IOError:
+	print 'You need a gulpconfig.yaml file to run the generator'
+
+#------------------ Create a package.json if it doesn't exist -----------#
+
+if not exists( packagejson ):
+	with open( packagejson, 'w+') as npmpackage:
+		app_info = config['app']
+		npmpackage.write(json.dumps(app_info))
+
+
+#------ For each declaration in config file, get the appropriate dependencies ---#
+DEPENDENCIES = setup['all']['dependencies']
+for tool in config:
+	print tool
+	if is_dependency(tool):
+		tool_dependencies = setup[tool]['dependencies']
+		for dependency in tool_dependencies:
+			if dependency not in DEPENDENCIES:
+				DEPENDENCIES.append(dependency)
+	else:
+		if tool == 'app':
+			pass
+		else:
+			print 'Sorry, ' + tool + ' is not a valid option.'
+
+#------------------ Install dependencies -------------#
+existing_dependencies = []
+if exists( packagejson ):
+	with open( packagejson, 'r') as npmpackage:
+		nodeconfig = json.load(npmpackage)
+	if 'dependencies' in nodeconfig:
+		for dependency in nodeconfig['dependencies']:
+			existing_dependencies.append(dependency)
+	if 'devDependencies' in nodeconfig:
+		for dependency in nodeconfig['devDependencies']:
+			existing_dependencies.append(dependency)
+
+for dependency in DEPENDENCIES:
+	if dependency not in existing_dependencies:
+		call(['npm','install','--save-dev',dependency])
+
+#------------------ Template setup ------------------#
+
+env = Environment(loader=PackageLoader('gulpfile','templates'))
+
+with open( join(currdir, 'gulpfile.js'), 'w+' ) as gulpfile:
+
+	# Add dependency declarations
+	for index, dependency in enumerate(DEPENDENCIES):
+		try:
+			if index == 0:
+				gulpfile.write('// Declare Dependencies\n')
+
+			if to_be_declared(dependency):
+
+				if dependency == 'lodash':
+					var_name = '_'
+					package_name = dependency
+				elif dependency == 'beeper':
+					var_name = 'beep'
+					package_name = dependency
+				elif dependency == 'browser-sync':
+					var_name = 'browsersync'
+					package_name = dependency
+				else:
+					var_name = dependency.replace('gulp-','').replace('node-','')
+					package_name = dependency
+
+				gulpfile.write( dependency_declaration(var_name, package_name) )
+
+				if dependency == 'browser-sync':
+					gulpfile.write( variable_declaration('reload','browsersync.reload'))
+			if index == len(DEPENDENCIES) - 1:
+				gulpfile.write(SECTION_DIVIDER)
+
+		except:
+			print 'Failed to install dependency: ' + dependency
+
+	# Error handling function
+	gulpfile.write( env.get_template('handleerror.js').render() )
+	gulpfile.write(SECTION_DIVIDER)
+
+	# Add the gulp task declaration
+	watch = []
+	for tool in config:
+		if to_be_declared(tool):
+			try:
+				print '- ' + tool
+				variables = config[tool]
+				variables['currdir'] = currdir
+				if tool == 'react':
+					if len(variables['sources']) > 1 :
+						raise Exception('For react, there should be only one source file!')
+
+					actions = []
+					if 'eslint' in config:
+						actions.append('eslint')
+					actions.append('react')
+					actions.append('mocha')
+
+					watch.append({
+						'files': config['react']['sources'],
+						'actions': actions
+					})
+
+				elif tool == 'typescript':
+					if os.path.isdir( typings_directory ):
+						pass
+					else:
+						print typings_directory + ' is not a directory'
+						os.makedirs( typings_directory )
+					if not exists( typings_config ):
+						call([ join(currdir, 'node_modules','typings','dist','bin.js'),'init'])
+
+					if not exists ( typescript_config ):
+						print('tsconfig.json does not exist! Using default...')
+						with open(typescript_config, 'w+') as tsconfig:
+							with open( join(os.path.dirname( os.path.abspath(__file__)), 'templates','tsconfig.json'), 'r') as default_tsconfig:
+								entire_file = default_tsconfig.read()
+								print(entire_file)
+								tsconfig.write(entire_file)
+
+					watch.append({
+						'files': config['typescript']['sources'] + ['typings/*/**', 'typings/**'],
+						'actions': ['typescript']
+					})
+				elif tool == 'scripts':
+					variables['config'] = config
+					print('-- tool is scripts')
+					print variables
+				else:
+					if 'sources' in config[tool]:
+						watch.append({
+							'files': config[tool]['sources'],
+							'actions': [tool]
+						})
+					else:
+						print tool + ' has no sources'
+				template = env.get_template(tool + '.js')
+				gulpfile.write( template.render(**variables ) )
+				gulpfile.write(SECTION_DIVIDER)
+
+			except jinja2.exceptions.TemplateNotFound:
+				print 'Template not found for ' + tool
+
+	gulpfile.write( env.get_template('watchfiles.js').render(watch=watch) )
+
+	tasks = []
+	for task in config:
+		if task != 'app':
+			tasks.append(task)
+
+	gulpfile.write(SECTION_DIVIDER)
+	gulpfile.write( env.get_template('default.js').render(tasks=tasks) )
