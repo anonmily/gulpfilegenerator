@@ -13,6 +13,22 @@ To test it out for yourself, go to **examples/basic_starter** in your terminal t
 
 **examples/advanced** has a more complete example (e.g. including typescript use).
 
-**This is still under construction, but please feel free to add modules, add improvements, or suggest features etc.**
+##This is still under construction, but please feel free to add modules, add improvements, or suggest features etc.
 
 ----
+##Currently Supported:
+* LESS
+* React (+Mocha)
+* Typescript
+* Javascript (js)/CSS (css) concatenation
+* ESlint
+* Nodemon
+* Browser-sync
+
+---
+### Todo:
+* make browser-sync more flexible (move config into YAML file)
+* SASS
+* Angular
+* Mocha (standalone)
+* Typings declaration in YAML file (for typescript)
